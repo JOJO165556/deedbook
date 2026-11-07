@@ -1,0 +1,25 @@
+# Politique du projet deedbook — aucune valeur secrète ici
+# Les secrets vivent exclusivement dans les variables d'environnement (.env)
+
+[project]
+name = "deedbook"
+description = "Moteur d'audit et de gouvernance PostgreSQL — usage personnel"
+
+# Modules activables. Un module inactif n'est ni chargé ni exposé
+[modules]
+enabled = []
+
+[retention]
+# Durées de conservation par type d'événement, en jours
+# Valeurs indicatives — la politique de conservation détaillée arrive en V1
+default_days = 365
+
+[masking]
+# Champs déclarés sensibles : masqués ou hachés avant tout stockage
+fields = []
+
+[ingestion]
+# Taille max d'un lot d'événements et délai d'attente côté SDK
+batch_max_events = 100
+batch_max_bytes = 262144
+send_timeout_seconds = 2.0

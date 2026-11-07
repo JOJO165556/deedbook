@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Hook pre-commit : détection de secrets avant commit.
+
+- Bloque les fichiers .env (hors .env.example) et fichiers de clés.
+- Scanne le diff stagé à la recherche de motifs de secrets.
+Stdlib uniquement, aucune dépendance.
+"""
+
+import re
+import subprocess
+import sys
+
+BLOCKED_FILES = re.compile(
+    r"(^|/)\.env($|\.)|\.(pem|key|p12|pfx)$|(^|/)secrets?/",
+    re.IGNORECASE,
+)
+ALLOWED = {".env.example"}
+
+SECRET_PATTERNS = [
+    (re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"), "clé privée"),
+    (re.compile(r"AKIA[0-9A-Z]{16}"), "clé AWS"),
+    (re.compile(r"ghp_[A-Za-z0-9]{36}"), "token GitHub"),
+    (re.compile(r"sk-[A-Za-z0-9]{20,}"), "clé API type sk-"),
+    (re.compile(r"(?i)(password|passwd|secret|token|api[_-]?key)\s*[:=]\s*['\"]?[^\s'\"]{8,}"), "affectation de secret"),
+]
+
+
+def staged_files() -> list[str]:
+    out = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+        capture_output=True, text=True, check=True,
+    )
+    return [line for line in out.stdout.splitlines() if line]
+
+
+def staged_diff(path: str) -> str:
+    out = subprocess.run(
+        ["git", "diff", "--cached", "--", path],
+        capture_output=True, text=True, check=True,
+    )
+    return out.stdout
+
+
+def main() -> int:
+    violations = []
+    for path in staged_files():
+        if BLOCKED_FILES.search(path) and not any(path.endswith(a) for a in ALLOWED):
+            violations.append(f"fichier interdit : {path}")
+            continue
+        if path.endswith((".png", ".jpg", ".jpeg", ".gif", ".pdf", ".docx", ".zip")):
+            continue
+        for lineno, line in enumerate(staged_diff(path).splitlines(), 1):
+            if not line.startswith("+") or line.startswith("+++"):
+                continue
+            for pattern, label in SECRET_PATTERNS:
+                if pattern.search(line):
+                    violations.append(f"{path}:{lineno} — {label}")
+                    break
+
+    if violations:
+        print("Commit refusé : secrets potentiels détectés.\n")
+        for v in violations:
+            print(f"  - {v}")
+        print("\nSi c'est un faux positif, retirez le fichier du commit ou ajustez .githooks/pre-commit.")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

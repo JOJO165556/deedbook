@@ -1,0 +1,25 @@
+# deedbook — déploiement local
+# Le moteur (API) sera ajouté ici quand le socle applicatif existera
+# Usage : docker compose -f deploy/docker-compose.yml --env-file .env up -d db
+
+services:
+  db:
+    build: ./db
+    container_name: deedbook-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DEEDBOOK_DB_USER:-deedbook_admin}
+      POSTGRES_PASSWORD: ${DEEDBOOK_DB_PASSWORD:?Définir dans .env}
+      POSTGRES_DB: ${DEEDBOOK_DB_NAME:-deedbook}
+    ports:
+      - "${DEEDBOOK_DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

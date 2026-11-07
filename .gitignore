@@ -1,0 +1,29 @@
+# Secrets — jamais commités
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node / dashboard (phase ultérieure)
+node_modules/
+.next/
+
+# OS / éditeurs
+.DS_Store
+*.swp
+.idea/
+.vscode/
