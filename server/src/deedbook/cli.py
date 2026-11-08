@@ -1,8 +1,4 @@
-"""CLI deedbook : init, doctor, verify, project add.
-
-Socle : seules les commandes existent. `doctor` valide déjà la
-configuration ; le reste arrive avec les phases V0–V3.
-"""
+"""CLI deedbook : init, doctor, verify, project add"""
 
 from __future__ import annotations
 
@@ -10,40 +6,27 @@ import argparse
 import sys
 
 
-def _not_implemented(name: str) -> int:
-    print(f"deedbook {name} : non implémenté (voir feuille de route V0–V3 dans la charte).")
-    return 1
-
-
 def cmd_init(_args: argparse.Namespace) -> int:
-    return _not_implemented("init")
+    from deedbook.admin import init
+
+    return init()
 
 
 def cmd_doctor(_args: argparse.Namespace) -> int:
-    from deedbook.config import ConfigError, get_settings, policy
+    from deedbook.admin import doctor
 
-    try:
-        settings = get_settings()
-    except ConfigError as exc:
-        print(exc)
-        return 1
-
-    # La politique est vérifiable sans secret
-    mods = policy().get("modules", {}).get("enabled", [])
-    print(f"Configuration OK — moteur joignable sur le port {settings.port}")
-    print(f"Modules activés : {mods or 'aucun'}")
-    print("Vérifications restantes (à implémenter) : connexion DB, droits réels,")
-    print("présence des clés, horloge synchronisée, destination d'ancrage.")
-    return 0
+    return doctor()
 
 
 def cmd_verify(_args: argparse.Namespace) -> int:
-    return _not_implemented("verify")
+    print("deedbook verify : non implémenté (chaînage V1)")
+    return 1
 
 
 def cmd_project_add(args: argparse.Namespace) -> int:
-    print(f"deedbook project add {args.name!r} : non implémenté.")
-    return 1
+    from deedbook.admin import add_project
+
+    return add_project(args.name)
 
 
 def main(argv: list[str] | None = None) -> int:

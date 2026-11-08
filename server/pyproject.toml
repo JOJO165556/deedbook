@@ -1,7 +1,7 @@
 [project]
 name = "deedbook"
 version = "0.1.0"
-description = "Moteur d'audit et de gouvernance PostgreSQL — usage personnel"
+description = "Moteur d'audit et de gouvernance PostgreSQL - usage personnel"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",
@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
     "psycopg[binary]>=3.2",
+    "cryptography>=43",
 ]
 
 [project.scripts]

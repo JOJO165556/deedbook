@@ -1,9 +1,9 @@
-# Politique du projet deedbook — aucune valeur secrète ici
+# Politique du projet deedbook - aucune valeur secrète ici
 # Les secrets vivent exclusivement dans les variables d'environnement (.env)
 
 [project]
 name = "deedbook"
-description = "Moteur d'audit et de gouvernance PostgreSQL — usage personnel"
+description = "Moteur d'audit et de gouvernance PostgreSQL - usage personnel"
 
 # Modules activables. Un module inactif n'est ni chargé ni exposé
 [modules]
@@ -11,7 +11,7 @@ enabled = []
 
 [retention]
 # Durées de conservation par type d'événement, en jours
-# Valeurs indicatives — la politique de conservation détaillée arrive en V1
+# Valeurs indicatives - la politique de conservation détaillée arrive en V1
 default_days = 365
 
 [masking]

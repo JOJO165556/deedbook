@@ -1,9 +1,5 @@
-"""Modules activables du moteur.
-
-Chaque module déclare un manifeste (nom, permissions, fonctions, entrées de
-menu). Un module inactif n'est ni chargé ni exposé — voir `deedbook.toml`
-(`[modules] enabled`).
-"""
+"""Modules activables : chaque module déclare un manifeste TOML, chargé
+uniquement s'il figure dans `[modules] enabled` de `deedbook.toml`."""
 
 from __future__ import annotations
 

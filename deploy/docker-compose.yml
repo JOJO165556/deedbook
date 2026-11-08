@@ -1,5 +1,3 @@
-# deedbook — déploiement local
-# Le moteur (API) sera ajouté ici quand le socle applicatif existera
 # Usage : docker compose -f deploy/docker-compose.yml --env-file .env up -d db
 
 services:

@@ -1,5 +1,1 @@
-"""API HTTP du moteur (FastAPI).
-
-Phase actuelle : socle uniquement. Les routeurs d'ingestion et de recherche
-seront branchés ici en V0.
-"""
+"""API HTTP du moteur (FastAPI) - routeurs à brancher en V0."""

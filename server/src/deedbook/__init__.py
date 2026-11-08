@@ -1,1 +1,1 @@
-"""Socle du moteur — aucune fonctionnalité V0 implémentée pour l'instant."""
+"""Moteur d'audit et de gouvernance PostgreSQL - usage personnel."""

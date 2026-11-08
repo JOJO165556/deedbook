@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Hook pre-commit : détection de secrets avant commit.
-
-- Bloque les fichiers .env (hors .env.example) et fichiers de clés.
-- Scanne le diff stagé à la recherche de motifs de secrets.
-Stdlib uniquement, aucune dépendance.
-"""
+"""Hook pre-commit : blope .env/clés et scanne le diff stagé (stdlib only)."""
 
 import re
 import subprocess
@@ -54,7 +49,7 @@ def main() -> int:
                 continue
             for pattern, label in SECRET_PATTERNS:
                 if pattern.search(line):
-                    violations.append(f"{path}:{lineno} — {label}")
+                    violations.append(f"{path}:{lineno} - {label}")
                     break
 
     if violations:

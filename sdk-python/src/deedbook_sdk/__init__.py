@@ -1,10 +1,8 @@
 """Kit d'intégration deedbook.
 
-Contrat fondateur : **zéro plantage hôte**. Le SDK ne lève jamais
-d'exception vers l'application auditée ; en cas de panne du moteur, les
-événements sont mis en file locale durable et rejoués sans doublon.
-
-Implémentation : phase V0. Voir la charte §6.3.
+Contrat : zéro plantage hôte - aucune exception ne remonte vers
+l'application ; en cas de panne du moteur, file locale durable et rejeu
+sans doublon. Implémentation : V0.
 """
 
 from __future__ import annotations
@@ -23,7 +21,7 @@ class AuditClient:
         """Enfile un événement. Ne lève jamais d'exception."""
         if self._disabled:
             return
-        raise NotImplementedError("V0 — file locale + envoi par lots à implémenter")
+        raise NotImplementedError("V0 - file locale + envoi par lots à implémenter")
 
 
 def disable() -> None:

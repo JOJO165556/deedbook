@@ -12,6 +12,8 @@ REQUIRED = {
 
 @pytest.fixture
 def clean_env(monkeypatch):
+    # Ignore le .env réel du dépôt : les tests ne dépendent que des variables
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
     for name in REQUIRED:
         monkeypatch.delenv(name, raising=False)
     return monkeypatch
@@ -36,7 +38,6 @@ def test_missing_vars_refuse_start(clean_env):
 def test_empty_env_file_does_not_mask_os_env(clean_env):
     """Un .env.example vide ne doit pas être chargé comme .env."""
     clean_env.setenv("DEEDBOOK_DATABASE_URL", REQUIRED["DEEDBOOK_DATABASE_URL"])
-    # Les autres restent absents -> refus
     with pytest.raises(ConfigError):
         get_settings()
 

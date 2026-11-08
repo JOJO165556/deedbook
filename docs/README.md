@@ -1,11 +1,10 @@
 # Documentation
 
-| Document | Statut | Échéance (charte §10) |
+| Document | Statut | Échéance |
 |---|---|---|
-| `SecureAudit_Charte_de_projet.docx` | Charte v0.1 (source de vérité) | Fait |
-| `modele-de-menace.md` | Squelette | Avant V0 |
-| `adr/` | Décisions en cours | En continu |
-| Spécification de l'événement d'audit | À produire | Avant V0 |
+| `specification-evenement-audit.md` | v1.0 validée | Avant V0 - fait |
+| `modele-de-menace.md` | v1.0 | Avant V0 - fait |
+| `adr/` | Décisions en cours (D001-D007) | En continu |
 | Contrat de l'interface (OpenAPI) | Généré par FastAPI | V0 |
 | Guide d'intégration | À produire | V0 |
 | Spécification chaînage/signature | À produire | Avant V1 |

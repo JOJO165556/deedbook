@@ -11,5 +11,5 @@ locale en cas de panne, masquage des champs sensibles.
   (clé d'idempotence par événement).
 - Masquage des champs déclarés sensibles avant stockage.
 
-L'interface HTTP du moteur reste le contrat de référence — un script peut
+L'interface HTTP du moteur reste le contrat de référence - un script peut
 l'appeler directement sans ce SDK.

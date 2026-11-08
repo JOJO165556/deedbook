@@ -1,7 +1,7 @@
 [project]
 name = "deedbook-sdk"
 version = "0.1.0"
-description = "Kit d'intégration deedbook — envoi d'événements d'audit sans jamais faire tomber l'hôte"
+description = "Kit d'intégration deedbook - envoi d'événements d'audit sans jamais faire tomber l'hôte"
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.28",
