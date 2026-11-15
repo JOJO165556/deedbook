@@ -1,1 +1,5 @@
-"""API HTTP du moteur (FastAPI) - routeurs à brancher en V0."""
+"""API HTTP du moteur"""
+
+from deedbook.api.app import create_app
+
+__all__ = ["create_app"]

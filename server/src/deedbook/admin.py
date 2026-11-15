@@ -49,9 +49,7 @@ def apply_migrations(conn: psycopg.Connection) -> list[str]:
                version text PRIMARY KEY,
                applied_at timestamptz NOT NULL DEFAULT now())"""
     )
-    applied = {
-        row[0] for row in conn.execute("SELECT version FROM deedbook.schema_migrations")
-    }
+    applied = {row[0] for row in conn.execute("SELECT version FROM deedbook.schema_migrations")}
     ran = []
     for path in sorted(MIGRATIONS_DIR.glob("*.sql")):
         if path.name in applied:
@@ -67,9 +65,7 @@ def apply_migrations(conn: psycopg.Connection) -> list[str]:
 
 
 def _role_exists(conn: psycopg.Connection, role: str) -> bool:
-    return conn.execute(
-        "SELECT 1 FROM pg_roles WHERE rolname = %s", (role,)
-    ).fetchone() is not None
+    return conn.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", (role,)).fetchone() is not None
 
 
 def _create_login_role(conn: psycopg.Connection, role: str) -> str:
@@ -143,9 +139,7 @@ def init() -> int:
                 new_passwords[role] = _create_login_role(conn, role)
                 print(f"Rôle {role} : créé")
         if not _role_exists(conn, ROLE_MIGRATE):
-            conn.execute(
-                sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(ROLE_MIGRATE))
-            )
+            conn.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(ROLE_MIGRATE)))
             print(f"Rôle {ROLE_MIGRATE} : créé (NOLOGIN)")
         else:
             print(f"Rôle {ROLE_MIGRATE} : déjà présent")
@@ -161,6 +155,11 @@ def init() -> int:
                     sql.Identifier(table), sql.Identifier(ROLE_READ)
                 )
             )
+        conn.execute(
+            sql.SQL("GRANT SELECT ON deedbook.apps TO {}, {}").format(
+                sql.Identifier(ROLE_INGEST), sql.Identifier(ROLE_READ)
+            )
+        )
         conn.execute(
             sql.SQL("GRANT USAGE ON SCHEMA deedbook TO {}, {}").format(
                 sql.Identifier(ROLE_INGEST), sql.Identifier(ROLE_READ)
@@ -262,9 +261,7 @@ def doctor() -> int:
             )
 
             for role in (ROLE_INGEST, ROLE_READ, ROLE_MIGRATE):
-                results.append(
-                    _check(f"rôle {role}", _role_exists(conn, role))
-                )
+                results.append(_check(f"rôle {role}", _role_exists(conn, role)))
 
             for table in AUDIT_TABLES:
                 q = "deedbook." + table
@@ -284,8 +281,7 @@ def doctor() -> int:
                     _check(
                         f"droits {table}",
                         can_insert and not can_delete and can_select,
-                        f"ingest INSERT={can_insert} DELETE={can_delete}, "
-                        f"read SELECT={can_select}",
+                        f"ingest INSERT={can_insert} DELETE={can_delete}, read SELECT={can_select}",
                     )
                 )
 
@@ -293,9 +289,7 @@ def doctor() -> int:
             import datetime as dt
 
             skew = abs((db_now - dt.datetime.now(dt.UTC)).total_seconds())
-            results.append(
-                _check("horloge synchronisée", skew < 30, f"écart {skew:.1f}s")
-            )
+            results.append(_check("horloge synchronisée", skew < 30, f"écart {skew:.1f}s"))
     except Exception as exc:
         results.append(_check("connexion base de données", False, str(exc)))
 

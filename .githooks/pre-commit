@@ -16,7 +16,7 @@ SECRET_PATTERNS = [
     (re.compile(r"AKIA[0-9A-Z]{16}"), "clé AWS"),
     (re.compile(r"ghp_[A-Za-z0-9]{36}"), "token GitHub"),
     (re.compile(r"sk-[A-Za-z0-9]{20,}"), "clé API type sk-"),
-    (re.compile(r"(?i)(password|passwd|secret|token|api[_-]?key)\s*[:=]\s*['\"]?[^\s'\"]{8,}"), "affectation de secret"),
+    (re.compile(r"""(?i)(password|passwd|secret|token|api[_-]?key)\s*[:=]\s*['"][^\s'"]{8,}"""), "affectation de secret"),
 ]
 
 
