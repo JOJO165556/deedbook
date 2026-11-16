@@ -19,7 +19,25 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
 
 
 def cmd_verify(_args: argparse.Namespace) -> int:
-    print("deedbook verify : non implémenté (chaînage V1)")
+    from deedbook.admin import connect, database_url
+    from deedbook.chain import verify_chain
+    from deedbook.config import get_settings
+
+    settings = get_settings()
+    signing_key = settings.signing_key.get_secret_value() if settings.signing_key else None
+
+    with connect(database_url()) as conn:
+        report = verify_chain(conn, signing_key_b64=signing_key)
+
+    print(f"Événements vérifiés : {report.events_verified}")
+    print(f"Lots vérifiés       : {report.batches_verified}")
+    if report.is_valid:
+        print("verify : intégrité de la chaîne validée (aucune altération)")
+        return 0
+
+    print("verify : ÉCHEC D'INTÉGRITÉ - altérations détectées :")
+    for err in report.errors:
+        print(f"  - {err}")
     return 1
 
 

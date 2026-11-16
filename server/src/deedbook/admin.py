@@ -161,6 +161,14 @@ def init() -> int:
             )
         )
         conn.execute(
+            sql.SQL("GRANT SELECT, UPDATE, INSERT ON deedbook.chain_state TO {}").format(
+                sql.Identifier(ROLE_INGEST)
+            )
+        )
+        conn.execute(
+            sql.SQL("GRANT SELECT ON deedbook.chain_state TO {}").format(sql.Identifier(ROLE_READ))
+        )
+        conn.execute(
             sql.SQL("GRANT USAGE ON SCHEMA deedbook TO {}, {}").format(
                 sql.Identifier(ROLE_INGEST), sql.Identifier(ROLE_READ)
             )

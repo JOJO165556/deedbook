@@ -247,7 +247,17 @@ async def ingest_events(
                 "signature": None,
             }
 
-            insert_batch(conn, batch_data, events_data, untrusted_app=untrusted)
+            signing_key_b64 = (
+                settings.signing_key.get_secret_value() if settings.signing_key else None
+            )
+
+            insert_batch(
+                conn,
+                batch_data,
+                events_data,
+                untrusted_app=untrusted,
+                signing_key_b64=signing_key_b64,
+            )
 
     except HTTPException:
         raise
