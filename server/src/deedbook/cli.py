@@ -1,4 +1,4 @@
-"""CLI deedbook : init, doctor, verify, anchor, serve, project add."""
+"""CLI deedbook : init, doctor, verify, anchor, archive, serve, project add."""
 
 from __future__ import annotations
 
@@ -16,6 +16,65 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
     from deedbook.admin import doctor
 
     return doctor()
+
+
+def cmd_archive(args: argparse.Namespace) -> int:
+    from datetime import date
+    from pathlib import Path
+
+    from deedbook.admin import connect, database_url
+    from deedbook.archive import archive_before, save_checkpoint
+    from deedbook.config import get_settings
+
+    try:
+        before = date.fromisoformat(args.before)
+    except ValueError:
+        print(f"archive : date invalide '{args.before}' (format attendu : YYYY-MM-DD)")
+        return 1
+
+    output = Path(args.output)
+    settings = get_settings()
+    signing_key = settings.signing_key.get_secret_value() if settings.signing_key else ""
+
+    with connect(database_url()) as conn:
+        count = archive_before(conn, before=before, signing_key_b64=signing_key, output_path=output)
+        if count == 0:
+            print(f"archive : aucun evenement anterieur a {before}")
+            return 0
+        save_checkpoint(
+            conn,
+            archived_before=before,
+            event_count=count,
+            last_seq=0,
+            last_hash="",
+            archive_path=str(output.resolve()),
+        )
+
+    print(f"archive : {count} evenements -> {output}")
+    return 0
+
+
+def cmd_purge(args: argparse.Namespace) -> int:
+    from datetime import date
+
+    from deedbook.admin import connect, database_url
+    from deedbook.archive import purge_archived
+
+    try:
+        before = date.fromisoformat(args.before)
+    except ValueError:
+        print(f"purge : date invalide '{args.before}' (format attendu : YYYY-MM-DD)")
+        return 1
+
+    with connect(database_url()) as conn:
+        try:
+            count = purge_archived(conn, before=before)
+        except ValueError as exc:
+            print(f"purge : {exc}")
+            return 1
+
+    print(f"purge : {count} evenements supprimes (before={before})")
+    return 0
 
 
 def cmd_anchor(_args: argparse.Namespace) -> int:
@@ -92,6 +151,15 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser(
         "anchor", help="Publie l'empreinte courante vers le serveur d'ancrage"
     ).set_defaults(func=cmd_anchor)
+
+    arc = sub.add_parser("archive", help="Archive les evenements expires dans un fichier signe")
+    arc.add_argument("--before", required=True, help="Date limite ISO 8601 (YYYY-MM-DD)")
+    arc.add_argument("--output", default="deedbook-archive.json", help="Fichier de sortie")
+    arc.set_defaults(func=cmd_archive)
+
+    purge = sub.add_parser("purge", help="Supprime les evenements archives (checkpoint requis)")
+    purge.add_argument("--before", required=True, help="Date limite ISO 8601 (YYYY-MM-DD)")
+    purge.set_defaults(func=cmd_purge)
 
     serve = sub.add_parser("serve", help="Démarre le serveur API FastAPI")
     serve.add_argument("--host", default=None, help="Hôte d'écoute (défaut: 127.0.0.1)")

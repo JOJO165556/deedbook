@@ -100,27 +100,52 @@ class VerifyReport:
     errors: list[str] = field(default_factory=list)
 
 
-def verify_chain(conn: psycopg.Connection, signing_key_b64: str | None = None) -> VerifyReport:
-    """Parcourt le journal d'audit et vérifie la chaîne SHA-256 et les signatures Ed25519."""
+def verify_chain(
+    conn: psycopg.Connection,
+    signing_key_b64: str | None = None,
+    from_seq: int | None = None,
+    from_hash: str | None = None,
+) -> VerifyReport:
+    """Parcourt le journal d'audit et vérifie la chaîne SHA-256 et les signatures Ed25519.
+
+    Si `from_seq` et `from_hash` sont fournis, la vérification reprend depuis ce point
+    (utile après une purge conditionnée par un checkpoint d'archivage).
+    """
     report = VerifyReport()
 
     # 1. Vérification séquentielle des événements
-    cursor = conn.execute(
-        """
-        SELECT
-            integrity_seq, prev_hash, event_hash, event_id, schema_version, idempotency_key,
-            occurred_at, actor_end_user, actor_type, actor_role, service_account,
-            app, untrusted_app, component, ip, session_id, request_id, correlation_id,
-            action, resource_type, resource_name, resource_id,
-            result_status, result_code, result_message, change_before, change_after
-        FROM deedbook.audit_events
-        WHERE integrity_seq IS NOT NULL
-        ORDER BY integrity_seq ASC
-        """
-    )
+    if from_seq is not None:
+        cursor = conn.execute(
+            """
+            SELECT
+                integrity_seq, prev_hash, event_hash, event_id, schema_version, idempotency_key,
+                occurred_at, actor_end_user, actor_type, actor_role, service_account,
+                app, untrusted_app, component, ip, session_id, request_id, correlation_id,
+                action, resource_type, resource_name, resource_id,
+                result_status, result_code, result_message, change_before, change_after
+            FROM deedbook.audit_events
+            WHERE integrity_seq IS NOT NULL AND integrity_seq > %s
+            ORDER BY integrity_seq ASC
+            """,
+            (from_seq,),
+        )
+    else:
+        cursor = conn.execute(
+            """
+            SELECT
+                integrity_seq, prev_hash, event_hash, event_id, schema_version, idempotency_key,
+                occurred_at, actor_end_user, actor_type, actor_role, service_account,
+                app, untrusted_app, component, ip, session_id, request_id, correlation_id,
+                action, resource_type, resource_name, resource_id,
+                result_status, result_code, result_message, change_before, change_after
+            FROM deedbook.audit_events
+            WHERE integrity_seq IS NOT NULL
+            ORDER BY integrity_seq ASC
+            """
+        )
     rows = cursor.fetchall()
-    expected_seq = 1
-    expected_prev = GENESIS_HASH
+    expected_seq = (from_seq + 1) if from_seq is not None else 1
+    expected_prev = from_hash if from_hash is not None else GENESIS_HASH
 
     for row in rows:
         seq = row[0]

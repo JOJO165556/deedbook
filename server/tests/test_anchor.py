@@ -1,4 +1,4 @@
-"""Tests TDD pour l'ancrage externe d'intégrité (anchor.py)."""
+"""Tests pour l'ancrage externe d'intégrité (anchor.py)."""
 
 from __future__ import annotations
 

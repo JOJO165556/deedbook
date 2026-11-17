@@ -235,11 +235,11 @@ flowchart LR
 
 ### Formule de calcul de l'empreinte canonique
 
-Pour chaque événement $i$ de séquence $\text{seq}_i$, l'empreinte $\text{event\_hash}_i$ est calculée par :
+Pour chaque événement $i$ de séquence $\text{seq}_i$, l'empreinte `event_hash[i]` est calculée par :
 
 $$\text{event\_hash}_i = \text{SHA-256}(\text{prev\_hash}_i : \text{seq}_i : \text{canonical\_json}(\text{event}_i))$$
 
-Où $\text{canonical\_json}$ est une sérialisation normalisée UTF-8 respectant l'ordre alphabétique des 24 clés canoniques (spec v1.0), sans aucun espace (`separators=(',', ':')`), garantissant un résultat déterministe quel que soit l'environnement.
+Où `canonical_json` est une sérialisation normalisée UTF-8 respectant l'ordre alphabétique des 24 clés canoniques (spec v1.0), sans aucun espace (`separators=(',', ':')`), garantissant un résultat déterministe quel que soit l'environnement.
 
 ### Scellement du lot par signature Ed25519
 
