@@ -1,4 +1,4 @@
-"""CLI deedbook : init, doctor, verify, serve, project add."""
+"""CLI deedbook : init, doctor, verify, anchor, serve, project add."""
 
 from __future__ import annotations
 
@@ -16,6 +16,23 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
     from deedbook.admin import doctor
 
     return doctor()
+
+
+def cmd_anchor(_args: argparse.Namespace) -> int:
+    from deedbook.admin import connect, database_url
+    from deedbook.anchor import publish_anchor
+    from deedbook.config import get_settings
+
+    settings = get_settings()
+    if not settings.anchor_url:
+        print("anchor : anchor_url non configurée (DEEDBOOK_ANCHOR_URL), rien a faire")
+        return 0
+
+    signing_key = settings.signing_key.get_secret_value() if settings.signing_key else ""
+    with connect(database_url()) as conn:
+        publish_anchor(conn, anchor_url=settings.anchor_url, signing_key_b64=signing_key)
+    print(f"anchor : empreinte publiée vers {settings.anchor_url}")
+    return 0
 
 
 def cmd_verify(_args: argparse.Namespace) -> int:
@@ -72,6 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verify", help="Vérifie la chaîne d'intégrité du journal").set_defaults(
         func=cmd_verify
     )
+    sub.add_parser(
+        "anchor", help="Publie l'empreinte courante vers le serveur d'ancrage"
+    ).set_defaults(func=cmd_anchor)
 
     serve = sub.add_parser("serve", help="Démarre le serveur API FastAPI")
     serve.add_argument("--host", default=None, help="Hôte d'écoute (défaut: 127.0.0.1)")

@@ -102,7 +102,7 @@ class AuditClient:
             if len(self._buffer) >= self.batch_max_events:
                 self.flush()
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("deedbook_sdk.emit a intercepté une erreur : %s", exc)
 
     def flush(self) -> None:
@@ -139,5 +139,5 @@ class AuditClient:
                     response.status_code,
                     response.text,
                 )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("deedbook_sdk: échec d'envoi du lot : %s", exc)
