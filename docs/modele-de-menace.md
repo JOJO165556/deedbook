@@ -134,6 +134,8 @@ Parades :
 
 ## 4. Matrice des parades
 
+*Pour la cartographie visuelle détaillée de ces barrières dans l'architecture système, voir le [Diagramme d'Architecture des Menaces](architecture.md#5-cartographie-du-modèle-de-menace--barrières-de-défense-s1-à-s6).*
+
 | Parade | S1 | S2 | S3 | S4 | S5 | S6 |
 |---|---|---|---|---|---|---|
 | Rôles à droits minimaux | x | | x | x | | |
