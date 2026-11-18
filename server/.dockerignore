@@ -1,0 +1,12 @@
+# Fichiers ignorés lors du build Docker de l'image de production
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+.venv/
+tests/
+*.md
+.env*

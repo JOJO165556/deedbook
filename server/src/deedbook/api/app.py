@@ -14,7 +14,7 @@ def create_app() -> FastAPI:
     """Crée et configure l'application FastAPI deedbook."""
     app = FastAPI(
         title="deedbook",
-        version="0.1.0",
+        version="1.0.0",
         description="Moteur d'audit et de gouvernance pour bases de données PostgreSQL",
         docs_url="/docs",
         redoc_url=None,

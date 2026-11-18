@@ -1,0 +1,196 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "server/v*"
+      - "sdk/v*"
+  pull_request:
+    branches: ["main"]
+  schedule:
+    # Audit hebdomadaire tous les lundis à 04:00 UTC pour détecter les nouvelles CVE
+    - cron: "0 4 * * 1"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/deedbook
+
+jobs:
+  lint-test:
+    name: Lint + Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: deedbook
+          POSTGRES_PASSWORD: deedbook
+          POSTGRES_DB: deedbook
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U deedbook"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: deedbook
+      DB_USER: deedbook
+      DB_PASSWORD: deedbook
+      DEEDBOOK_DATABASE_URL: postgresql://deedbook:deedbook@localhost:5432/deedbook
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Détection de fuites de secrets avec Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Générer les clés de test éphémères
+        run: |
+          echo "DEEDBOOK_SIGNING_KEY=$(python3 -c 'import secrets, base64; print(base64.b64encode(secrets.token_bytes(32)).decode())')" >> "$GITHUB_ENV"
+          echo "DEEDBOOK_HMAC_KEY=$(python3 -c 'import secrets, base64; print(base64.b64encode(secrets.token_bytes(32)).decode())')" >> "$GITHUB_ENV"
+          echo "DEEDBOOK_ADMIN_TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(16))')" >> "$GITHUB_ENV"
+          echo "DEEDBOOK_API_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(16))')" >> "$GITHUB_ENV"
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Installer Python
+        run: uv python install 3.13
+
+      - name: Installer les dépendances serveur
+        working-directory: server
+        run: uv sync --all-extras
+
+      - name: Installer les dépendances SDK
+        working-directory: sdk-python
+        run: uv sync --all-extras
+
+      - name: Ruff check serveur
+        working-directory: server
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Ruff check SDK
+        working-directory: sdk-python
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Audit de sécurité des dépendances
+        working-directory: server
+        run: uv run pip-audit
+
+      - name: Appliquer les migrations
+        working-directory: server
+        run: |
+          for f in migrations/*.sql; do
+            PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f "$f"
+          done
+
+      - name: Tests serveur
+        working-directory: server
+        run: uv run pytest -q --tb=short
+
+      - name: Tests SDK
+        working-directory: sdk-python
+        run: uv run pytest -q --tb=short
+
+  build-push-server:
+    name: Build + Push Docker (server)
+    runs-on: ubuntu-latest
+    needs: lint-test
+    if: startsWith(github.ref, 'refs/tags/server/v')
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Connexion GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extraire la version du tag
+        id: ver
+        run: |
+          echo "version=${GITHUB_REF_NAME#server/}" >> "$GITHUB_OUTPUT"
+          echo "image_name_lower=${IMAGE_NAME,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Build et push image Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          file: server/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.ver.outputs.image_name_lower }}:${{ steps.ver.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.ver.outputs.image_name_lower }}:latest
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Créer la release GitHub (server)
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Server ${{ steps.ver.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+
+  release-sdk:
+    name: Release SDK Python
+    runs-on: ubuntu-latest
+    needs: lint-test
+    if: startsWith(github.ref, 'refs/tags/sdk/v')
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Installer Python
+        run: uv python install 3.13
+
+      - name: Extraire la version du tag
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#sdk/}" >> "$GITHUB_OUTPUT"
+
+      - name: Build du package SDK
+        working-directory: sdk-python
+        run: uv build
+
+      - name: Créer la release GitHub (SDK)
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SDK Python ${{ steps.ver.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            sdk-python/dist/*.whl
+            sdk-python/dist/*.tar.gz
