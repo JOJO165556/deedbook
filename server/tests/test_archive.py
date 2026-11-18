@@ -167,14 +167,14 @@ def test_cmd_archive_subcommand_existe():
 
 
 def _make_conn_with_checkpoint(events: list[dict] | None = None) -> MagicMock:
-    """Connexion mock qui retourne des evenements ET simule les appels checkpoint."""
+    """Connexion mock qui retourne des événements ET simule les appels checkpoint."""
     conn = _make_conn(events)
     conn.execute.return_value.fetchone.return_value = None
     return conn
 
 
 def test_save_checkpoint_insere_en_base():
-    """save_checkpoint insere un enregistrement dans archive_checkpoints."""
+    """save_checkpoint insère un enregistrement dans archive_checkpoints."""
     from deedbook.archive import save_checkpoint
 
     conn = MagicMock()
@@ -209,7 +209,7 @@ def test_purge_archived_sans_checkpoint_leve_erreur():
 
 
 def test_purge_archived_avec_checkpoint_supprime_evenements():
-    """purge_archived supprime les evenements anterieurs si un checkpoint existe."""
+    """purge_archived supprime les événements antérieurs si un checkpoint existe."""
     from deedbook.archive import purge_archived
 
     conn = MagicMock()

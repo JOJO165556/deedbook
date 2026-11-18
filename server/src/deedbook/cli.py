@@ -39,7 +39,7 @@ def cmd_archive(args: argparse.Namespace) -> int:
     with connect(database_url()) as conn:
         count = archive_before(conn, before=before, signing_key_b64=signing_key, output_path=output)
         if count == 0:
-            print(f"archive : aucun evenement anterieur a {before}")
+            print(f"archive : aucun événement antérieur à {before}")
             return 0
         save_checkpoint(
             conn,
@@ -50,7 +50,7 @@ def cmd_archive(args: argparse.Namespace) -> int:
             archive_path=str(output.resolve()),
         )
 
-    print(f"archive : {count} evenements -> {output}")
+    print(f"archive : {count} événements -> {output}")
     return 0
 
 
@@ -73,8 +73,42 @@ def cmd_purge(args: argparse.Namespace) -> int:
             print(f"purge : {exc}")
             return 1
 
-    print(f"purge : {count} evenements supprimes (before={before})")
+    print(f"purge : {count} événements supprimés (before={before})")
     return 0
+
+
+def cmd_reconcile(args: argparse.Namespace) -> int:
+    import sys
+    from pathlib import Path
+
+    from deedbook.admin import connect, database_url
+    from deedbook.reconcile import parse_pgaudit_log, reconcile_pgaudit
+
+    if args.log == "-":
+        content = sys.stdin.read()
+    else:
+        log_path = Path(args.log)
+        if not log_path.exists():
+            print(f"reconcile : fichier introuvable '{args.log}'")
+            return 1
+        content = log_path.read_text()
+
+    entries = parse_pgaudit_log(content)
+    with connect(database_url()) as conn:
+        report = reconcile_pgaudit(conn, entries)
+
+    print(f"Entrées analysées  : {report.total_entries}")
+    print(f"Écritures détectées: {report.writes_analyzed}")
+    print(f"Événements validés : {report.matched_events}")
+
+    if report.is_clean:
+        print("reconcile : aucune écriture orpheline détectée (intégrité validée)")
+        return 0
+
+    print(f"reconcile : ALERTE - {len(report.orphans)} écritures orphelines détectées :")
+    for o in report.orphans:
+        print(f"  - [{o.entry.command}] {o.entry.object_name} : {o.reason}")
+    return 1
 
 
 def cmd_anchor(_args: argparse.Namespace) -> int:
@@ -84,7 +118,7 @@ def cmd_anchor(_args: argparse.Namespace) -> int:
 
     settings = get_settings()
     if not settings.anchor_url:
-        print("anchor : anchor_url non configurée (DEEDBOOK_ANCHOR_URL), rien a faire")
+        print("anchor : anchor_url non configurée (DEEDBOOK_ANCHOR_URL), rien à faire")
         return 0
 
     signing_key = settings.signing_key.get_secret_value() if settings.signing_key else ""
@@ -152,14 +186,25 @@ def main(argv: list[str] | None = None) -> int:
         "anchor", help="Publie l'empreinte courante vers le serveur d'ancrage"
     ).set_defaults(func=cmd_anchor)
 
-    arc = sub.add_parser("archive", help="Archive les evenements expires dans un fichier signe")
+    arc = sub.add_parser("archive", help="Archive les événements expirés dans un fichier signé")
     arc.add_argument("--before", required=True, help="Date limite ISO 8601 (YYYY-MM-DD)")
     arc.add_argument("--output", default="deedbook-archive.json", help="Fichier de sortie")
     arc.set_defaults(func=cmd_archive)
 
-    purge = sub.add_parser("purge", help="Supprime les evenements archives (checkpoint requis)")
+    purge = sub.add_parser("purge", help="Supprime les événements archivés (checkpoint requis)")
     purge.add_argument("--before", required=True, help="Date limite ISO 8601 (YYYY-MM-DD)")
     purge.set_defaults(func=cmd_purge)
+
+    rec = sub.add_parser(
+        "reconcile",
+        help="Rapproche les journaux pgAudit et détecte les écritures orphelines",
+    )
+    rec.add_argument(
+        "--log",
+        required=True,
+        help="Fichier de logs PostgreSQL pgAudit (ou '-' pour stdin)",
+    )
+    rec.set_defaults(func=cmd_reconcile)
 
     serve = sub.add_parser("serve", help="Démarre le serveur API FastAPI")
     serve.add_argument("--host", default=None, help="Hôte d'écoute (défaut: 127.0.0.1)")

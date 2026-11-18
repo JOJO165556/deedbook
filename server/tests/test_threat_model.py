@@ -199,9 +199,51 @@ def test_atk_04_tampered_event_detected_by_verify_chain():
             conn.execute("ALTER TABLE deedbook.audit_events ENABLE TRIGGER audit_events_immutable")
 
 
-def test_atk_05_orphan_database_write_detection_pending_v1():
-    """ATK-05 : Rapprochement pgAudit et détection d'écritures orphelines (prévu jalon M6)."""
-    pytest.skip("Moteur de réconciliation pgAudit prévu au jalon M6 / V1")
+def test_atk_05_orphan_database_write_detection(client):
+    """ATK-05 : Rapprochement pgAudit et détection d'écritures orphelines (scénario S2)."""
+    from deedbook.reconcile import parse_pgaudit_log, reconcile_pgaudit
+
+    settings = get_settings()
+    admin_dsn = settings.database_url.get_secret_value()
+
+    # 1. Ingestion d'un événement applicatif légitime avec correlation_id
+    legit_corr_id = f"corr-{uuid.uuid4().hex[:8]}"
+    batch = _make_batch(correlation_id=legit_corr_id)
+    resp = client.post(
+        "/v1/events",
+        json=batch,
+        headers={"Authorization": "Bearer token_test_monapp"},
+    )
+    assert resp.status_code == 202
+
+    # 2. Simulation d'un journal pgAudit contenant une écriture légitime et une écriture pirate
+    line_legit = (
+        "2026-11-18 00:00:01 UTC [1000] LOG:  AUDIT: SESSION,1,1,WRITE,INSERT,TABLE,"
+        "public.items,INSERT INTO public.items (name) VALUES ('Item 0') "
+        "/* correlation_id: CID */,<not logged>"
+    ).replace("CID", legit_corr_id)
+    line_rogue = (
+        "2026-11-18 00:00:02 UTC [1001] LOG:  AUDIT: SESSION,2,1,WRITE,UPDATE,TABLE,"
+        "public.items,UPDATE public.items SET price = 0 WHERE id = '0',<not logged>"
+    )
+    log_content = f"{line_legit}\n{line_rogue}"
+
+    entries = parse_pgaudit_log(log_content)
+    assert len(entries) == 2
+
+    # 3. Réconciliation avec la base de données deedbook
+    with psycopg.connect(admin_dsn) as conn:
+        report = reconcile_pgaudit(conn, entries)
+
+    # 4. Vérification que l'attaque orpheline S2 est détectée
+    assert report.is_clean is False
+    assert report.writes_analyzed == 2
+    assert report.matched_events == 1
+    assert len(report.orphans) == 1
+    orphan = report.orphans[0]
+    assert orphan.entry.command == "UPDATE"
+    assert orphan.entry.object_name == "public.items"
+    assert "aucun correlation_id" in orphan.reason.lower()
 
 
 def test_atk_06_malicious_script_and_sql_injection_payloads(client):

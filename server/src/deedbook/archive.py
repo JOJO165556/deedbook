@@ -96,7 +96,7 @@ def archive_before(
     archive = {**payload, "signature_ed25519": signature}
     output_path.write_text(json.dumps(archive, indent=2, ensure_ascii=False))
 
-    logger.info("archivage : %d evenements -> %s", len(events), output_path)
+    logger.info("archivage : %d événements -> %s", len(events), output_path)
     return len(events)
 
 
@@ -129,5 +129,5 @@ def purge_archived(conn: psycopg.Connection, before: date) -> int:
     cutoff = datetime(before.year, before.month, before.day, tzinfo=UTC)
     cursor = conn.execute(_DELETE_EVENTS, (cutoff,))
     count: int = cursor.rowcount
-    logger.info("purge : %d evenements supprimes (before=%s)", count, before)
+    logger.info("purge : %d événements supprimés (before=%s)", count, before)
     return count

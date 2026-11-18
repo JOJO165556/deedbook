@@ -25,7 +25,7 @@ def _conn_two_queries(event_rows: list, batch_rows: list | None = None) -> Magic
 
 
 def test_verify_chain_sans_checkpoint_part_de_genesis():
-    """Sans checkpoint, verify_chain demarre a seq=1 et prev=GENESIS."""
+    """Sans checkpoint, verify_chain démarre à seq=1 et prev=GENESIS."""
     conn = _conn_two_queries([])
     report = verify_chain(conn)
     assert report.is_valid
@@ -33,7 +33,7 @@ def test_verify_chain_sans_checkpoint_part_de_genesis():
 
 
 def test_verify_chain_avec_from_seq_et_from_hash():
-    """verify_chain accepte from_seq et from_hash pour reprendre apres purge."""
+    """verify_chain accepte from_seq et from_hash pour reprendre après purge."""
     conn = _conn_two_queries([])
     report = verify_chain(conn, from_seq=10, from_hash="a" * 64)
     assert report.is_valid
@@ -41,7 +41,7 @@ def test_verify_chain_avec_from_seq_et_from_hash():
 
 
 def test_verify_chain_checkpoint_modifie_point_de_depart():
-    """Avec from_seq=5, from_hash=H5, le premier evenement attendu est seq=6 avec prev=H5."""
+    """Avec from_seq=5, from_hash=H5, le premier événement attendu est seq=6 avec prev=H5."""
     prev_hash = "b" * 64
     seq = 6
 

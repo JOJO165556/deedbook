@@ -195,7 +195,7 @@ sequenceDiagram
 
 ### Mécanismes clés de l'ingestion
 
-- **Verrou ligne en $O(1)$** : Au lieu de calculer `SELECT MAX(integrity_seq) FROM audit_events` qui se dégraderait avec le volume de données, `deedbook` verrouille la ligne unique de la table `deedbook.chain_state` (`WHERE id = 1 FOR UPDATE`). Ce verrouillage sérialise les requêtes concurrentes en temps constant.
+- **Verrou ligne en `O(1)`** : Au lieu de calculer `SELECT MAX(integrity_seq) FROM audit_events` qui se dégraderait avec le volume de données, `deedbook` verrouille la ligne unique de la table `deedbook.chain_state` (`WHERE id = 1 FOR UPDATE`). Ce verrouillage sérialise les requêtes concurrentes en temps constant.
 - **Idempotence stricte** : Si un lot est réémis (timeout réseau, rejeu), `ON CONFLICT DO NOTHING` évite toute insertion en double et préserve la chaîne sans altérer l'état.
 
 ---
@@ -235,9 +235,11 @@ flowchart LR
 
 ### Formule de calcul de l'empreinte canonique
 
-Pour chaque événement $i$ de séquence $\text{seq}_i$, l'empreinte `event_hash[i]` est calculée par :
+Pour chaque événement `i` de séquence `seq[i]`, l'empreinte `event_hash[i]` est calculée par :
 
-$$\text{event\_hash}_i = \text{SHA-256}(\text{prev\_hash}_i : \text{seq}_i : \text{canonical\_json}(\text{event}_i))$$
+```text
+event_hash[i] = SHA-256(prev_hash[i] : seq[i] : canonical_json(event[i]))
+```
 
 Où `canonical_json` est une sérialisation normalisée UTF-8 respectant l'ordre alphabétique des 24 clés canoniques (spec v1.0), sans aucun espace (`separators=(',', ':')`), garantissant un résultat déterministe quel que soit l'environnement.
 
