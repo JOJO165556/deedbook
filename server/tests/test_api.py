@@ -51,6 +51,16 @@ def test_health_check(client):
     assert res.json() == {"status": "ok"}
 
 
+def test_health_check_echec_base_de_donnees(client):
+    from unittest.mock import patch
+
+    with patch("deedbook.api.db.connect_ingest", side_effect=Exception("Connexion perdue")):
+        res = client.get("/health")
+        assert res.status_code == 503
+        data = res.json()
+        assert data["error"] == "service_unavailable"
+
+
 def test_missing_auth_header(client):
     batch = make_valid_batch()
     res = client.post("/v1/events", json=batch)

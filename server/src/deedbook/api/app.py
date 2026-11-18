@@ -45,7 +45,21 @@ def create_app() -> FastAPI:
 
     @app.get("/health", tags=["system"], summary="Vérification de disponibilité")
     async def health_check() -> dict[str, str]:
-        return {"status": "ok"}
+        """Vérifie la disponibilité du service et la connectivité PostgreSQL."""
+        from deedbook.api.db import connect_ingest
+
+        try:
+            with connect_ingest() as conn:
+                conn.execute("SELECT 1")
+            return {"status": "ok"}
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "service_unavailable",
+                    "detail": f"Base de données inaccessible: {exc}",
+                },
+            ) from exc
 
     app.include_router(router)
 

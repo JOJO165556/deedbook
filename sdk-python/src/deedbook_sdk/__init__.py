@@ -6,5 +6,6 @@ sans doublon.
 """
 
 from deedbook_sdk.client import AuditClient, disable, enable
+from deedbook_sdk.middleware import DeedbookASGIMiddleware, DeedbookWSGIMiddleware
 
-__all__ = ["AuditClient", "disable", "enable"]
+__all__ = ["AuditClient", "DeedbookASGIMiddleware", "DeedbookWSGIMiddleware", "disable", "enable"]
