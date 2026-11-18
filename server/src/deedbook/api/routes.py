@@ -270,6 +270,17 @@ async def ingest_events(
             },
         ) from exc
 
+    # Notification des modules activés (ex. webhooks sur événements critiques)
+    policy_data = load_policy()
+    modules_cfg = policy_data.get("modules", {})
+    webhook_url = settings.webhook_url or modules_cfg.get("webhooks", {}).get("url")
+    if "webhooks" in modules_cfg.get("enabled", []) and webhook_url:
+        from deedbook.modules.webhooks.notifier import dispatch_webhook, is_critical_event
+
+        for ev in events_data:
+            if is_critical_event(ev):
+                dispatch_webhook(webhook_url, ev, signing_key_b64)
+
     return BatchResponse(
         batch_id=batch.batch_id,
         received_count=len(batch.events),

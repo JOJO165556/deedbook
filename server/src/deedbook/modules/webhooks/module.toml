@@ -1,0 +1,6 @@
+[module]
+name = "webhooks"
+description = "Notifications HTTP POST sur événements d'audit critiques"
+permissions = ["events:read"]
+functions = ["notify_critical_event"]
+menu = ["Alertes"]

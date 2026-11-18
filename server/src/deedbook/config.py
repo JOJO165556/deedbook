@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     ingest_url: SecretStr | None = None
     read_url: SecretStr | None = None
     anchor_url: str | None = None
+    webhook_url: str | None = None
     port: int = 8000
 
 

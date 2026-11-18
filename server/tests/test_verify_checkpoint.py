@@ -1,4 +1,4 @@
-"""Tests TDD pour verify_chain avec reprise depuis checkpoint."""
+"""Tests pour verify_chain avec reprise depuis checkpoint."""
 
 from __future__ import annotations
 

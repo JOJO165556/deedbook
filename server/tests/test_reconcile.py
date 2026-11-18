@@ -1,4 +1,4 @@
-"""Tests TDD pour l'analyseur pgAudit et le moteur de réconciliation (reconcile.py)."""
+"""Tests pour l'analyseur pgAudit et le moteur de réconciliation (reconcile.py)."""
 
 from __future__ import annotations
 

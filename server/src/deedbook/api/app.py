@@ -48,4 +48,19 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(router)
+
+    # Chargement dynamique des modules activés dans la politique
+    from importlib import import_module
+
+    from deedbook.config import policy
+
+    enabled_modules = policy().get("modules", {}).get("enabled", [])
+    for mod_name in enabled_modules:
+        try:
+            mod = import_module(f"deedbook.modules.{mod_name}.routes")
+            if hasattr(mod, "router"):
+                app.include_router(mod.router)
+        except ModuleNotFoundError:
+            pass
+
     return app
